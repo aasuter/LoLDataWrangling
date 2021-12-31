@@ -15,7 +15,7 @@ import time
 
 
 def get_player_stats(player):
-    return np.array([player.summoner_spell_d.id, player.summoner_spell_f.id, player.champion.id, player.side,
+    return np.array([player.summoner_spell_d.id, player.summoner_spell_f.id, player.champion.id, player.side, player.individual_position,
                         player.stats.assists, player.stats.damage_dealt_to_buildings, player.stats.damage_dealt_to_objectives, 
                         player.stats.damage_dealt_to_turrets, player.stats.deaths, player.stats.gold_earned, player.stats.kda, 
                         player.stats.kills, player.stats.level, player.stats.time_CCing_others, player.stats.total_damage_dealt, 
@@ -24,7 +24,7 @@ def get_player_stats(player):
                         
 
 def get_match_stats(match):
-    match_stats = np.empty(shape = (0,20))
+    match_stats = np.empty(shape = (0,21))
     players = match.participants
 
     # Random Summoner Choice to Ensure Independence
@@ -36,7 +36,7 @@ def get_match_stats(match):
 
 def get_match_history_stats(history):
 
-    history_stats = np.empty(shape = (0,20))
+    history_stats = np.empty(shape = (0,21))
 
 
     for match in history:
@@ -52,17 +52,22 @@ def get_match_history_stats(history):
 
 def get_summoner_list_stats(summoners):
 
-    summoner_stats = np.empty(shape=(0,20))
+    summoner_stats = np.empty(shape=(0,21))
 
     
-
+    i = 0
     for summoner in summoners:
+
+        i+= 1
         
-        s = Summoner(name=summoner, region='NA')
+        s = Summoner(name=summoner, region='EUW')
 
         match_history = cass.get_match_history(continent=s.region.continent, puuid=s.puuid, queue=Queue.ranked_solo_fives)
-        print(match_history)
         summoner_stats = np.r_[summoner_stats, get_match_history_stats(match_history)]
+
+        print(str(i) + ' Summoner')
+        print('Sleep for 10 Seconds')
+        time.sleep(10)
     
     return summoner_stats
         
@@ -90,9 +95,8 @@ def implement_data_dragon(data, api):
 
 def get_challenger_accounts():
     
-    challenger_data = cass.get_challenger_league(cass.Queue.ranked_solo_fives, region=cass.Region('KR'))
+    challenger_data = cass.get_challenger_league(cass.Queue.ranked_solo_fives, region=cass.Region('EUW'))
 
-    print(len(challenger_data))
     names = []
 
     for s in challenger_data.entries:
@@ -102,14 +106,14 @@ def get_challenger_accounts():
         
 #%% Main run                 
 if __name__ == "__main__":
-    api_key = "RGAPI-77f340f5-3ec5-43ab-9709-8ec42e52c077"
+    api_key = "RGAPI-05ab3243-4e06-48e7-9476-c26382faae0d"
     cass.set_riot_api_key(api_key)
     
     
 
     
     summoner_list = random.sample(get_challenger_accounts(), 300)
-    data = pd.DataFrame(get_summoner_list_stats(summoner_list), columns=np.array(['d_spell', 'f_spell', 'champion', 'side', 'assists', 'damage_objectives', 'damage_building', 'damage_turrets', 'deaths', 
+    data = pd.DataFrame(get_summoner_list_stats(summoner_list), columns=np.array(['d_spell', 'f_spell', 'champion', 'side', 'role', 'assists', 'damage_objectives', 'damage_building', 'damage_turrets', 'deaths', 
     'gold_earned', 'kda', 'kills', 'level', 'time_cc', 'damage_total' , 'damage_taken', 'total_minions_killed', 'turret_kills', 'vision_score', 'result']))
 
     data = implement_data_dragon(data, api_key)
